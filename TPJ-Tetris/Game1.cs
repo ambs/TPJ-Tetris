@@ -18,11 +18,19 @@ namespace TPJ_Tetris
     {
         GraphicsDeviceManager graphics;
         SpriteBatch spriteBatch;
+        Texture2D box;
+        byte[,] board = new byte[22, 10];
+        byte[,] piece = { { 0, 1, 0 }, { 1, 1, 1 } };
+        int pX = 4, pY = 0;
+        float lastMove = 0f;
 
         public Game1()
             : base()
         {
             graphics = new GraphicsDeviceManager(this);
+            graphics.IsFullScreen = false;
+            graphics.PreferredBackBufferHeight = 600;
+            graphics.PreferredBackBufferWidth = 300;
             Content.RootDirectory = "Content";
         }
 
@@ -39,25 +47,15 @@ namespace TPJ_Tetris
             base.Initialize();
         }
 
-        /// <summary>
-        /// LoadContent will be called once per game and is the place to load
-        /// all of your content.
-        /// </summary>
         protected override void LoadContent()
         {
-            // Create a new SpriteBatch, which can be used to draw textures.
             spriteBatch = new SpriteBatch(GraphicsDevice);
-
-            // TODO: use this.Content to load your game content here
+            box = Content.Load<Texture2D>("box");
         }
 
-        /// <summary>
-        /// UnloadContent will be called once per game and is the place to unload
-        /// all content.
-        /// </summary>
         protected override void UnloadContent()
         {
-            // TODO: Unload any non ContentManager content here
+            box.Dispose();
         }
 
         /// <summary>
@@ -70,7 +68,14 @@ namespace TPJ_Tetris
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
                 Exit();
 
-            // TODO: Add your update logic here
+            lastMove += (float) gameTime.ElapsedGameTime.TotalSeconds;
+
+
+            if (lastMove >= 1f && canGoDown())
+            {
+                pY++;
+                lastMove = 0;
+            }
 
             base.Update(gameTime);
         }
@@ -83,9 +88,38 @@ namespace TPJ_Tetris
         {
             GraphicsDevice.Clear(Color.CornflowerBlue);
 
-            // TODO: Add your drawing code here
+            spriteBatch.Begin();
+            for (int x = 0; x < 10; x++)
+                for (int y = 2; y < 22; y++)
+                {
+                    if (board[y , x] != 0)
+                        spriteBatch.Draw(box,
+                            new Vector2(x * 30, (y-2) * 30),
+                            Color.White);
+                    if (y >= pY && x >= pX && 
+                        y < pY + piece.GetLength(0) &&
+                        x < pX + piece.GetLength(1))
+                    {
+                        if (piece[y - pY, x - pX] != 0)
+                        {
+                            spriteBatch.Draw(box,
+                                new Vector2(x*30, (y-2)*30),
+                                Color.White);
+                        }
+                    }
+                }
+            spriteBatch.End();
 
             base.Draw(gameTime);
+        }
+
+        private bool canGoDown()
+        {
+            if (pY + piece.GetLength(0) >= 22)
+                return false;
+            else
+                return true;
+
         }
     }
 }

@@ -11,9 +11,6 @@ using Microsoft.Xna.Framework.GamerServices;
 
 namespace TPJ_Tetris
 {
-    /// <summary>
-    /// This is the main type for your game
-    /// </summary>
     public class Game1 : Game
     {
         GraphicsDeviceManager graphics;
@@ -22,7 +19,8 @@ namespace TPJ_Tetris
         byte[,] board = new byte[22, 10];
         byte[,] piece = { { 0, 1, 0 }, { 1, 1, 1 } };
         int pX = 4, pY = 0;
-        float lastMove = 0f;
+        float lastAutomaticMove = 0f;
+        float lastHumanMove = 0f;
 
         public Game1()
             : base()
@@ -34,12 +32,6 @@ namespace TPJ_Tetris
             Content.RootDirectory = "Content";
         }
 
-        /// <summary>
-        /// Allows the game to perform any initialization it needs to before starting to run.
-        /// This is where it can query for any required services and load any non-graphic
-        /// related content.  Calling base.Initialize will enumerate through any components
-        /// and initialize them as well.
-        /// </summary>
         protected override void Initialize()
         {
             // TODO: Add your initialization logic here
@@ -58,24 +50,45 @@ namespace TPJ_Tetris
             box.Dispose();
         }
 
-        /// <summary>
-        /// Allows the game to run logic such as updating the world,
-        /// checking for collisions, gathering input, and playing audio.
-        /// </summary>
-        /// <param name="gameTime">Provides a snapshot of timing values.</param>
         protected override void Update(GameTime gameTime)
         {
+            // para sair do jogo
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
                 Exit();
+            // conta tempo que decorreu desde ultimo movimento automatico e manual
+            lastAutomaticMove += (float) gameTime.ElapsedGameTime.TotalSeconds;
+            lastHumanMove     += (float)gameTime.ElapsedGameTime.TotalSeconds;
+            // movimento automatico para baixo
+            if (lastAutomaticMove >= 1f)
+                if(canGoDown())
+                {
+                    pY++;
+                    lastAutomaticMove = 0;
+                }
+                else
+                {
+                    freeze();
+                    pY = 0;
+                }
 
-            lastMove += (float) gameTime.ElapsedGameTime.TotalSeconds;
-
-
-            if (lastMove >= 1f && canGoDown())
+            if (lastHumanMove >= 1f / 20f)
             {
-                pY++;
-                lastMove = 0;
+                lastHumanMove = 0f;
+                // verificar se seta para baixo foi pressionada
+                if (Keyboard.GetState().IsKeyDown(Keys.Down))
+                {
+                    if (canGoDown()) pY++;
+                }
+                if (Keyboard.GetState().IsKeyDown(Keys.Left))
+                {
+                    if (canGoLeft()) pX--;
+                }
+                if (Keyboard.GetState().IsKeyDown(Keys.Right))
+                {
+                    if (canGoRight()) pX++;
+                }
             }
+
 
             base.Update(gameTime);
         }
@@ -118,8 +131,50 @@ namespace TPJ_Tetris
             if (pY + piece.GetLength(0) >= 22)
                 return false;
             else
-                return true;
+                return canGo(pX, pY+1);
+        }
 
+        private bool canGoLeft()
+        {
+            if (pX == 0) return false;
+            else return canGo(pX - 1, pY);
+        }
+        private bool canGoRight()
+        {
+            if (pX + piece.GetLength(1) == 10) return false;
+            else return canGo(pX + 1, pY);
+        }
+
+        private bool canGo(int dX, int dY)
+        {
+            // Vamos supor que é possível
+            // e procurar um contra exemplo
+            for (int x = 0; x < piece.GetLength(1); x++)
+            {
+                for (int y = 0; y < piece.GetLength(0); y++)
+                {
+                    if (piece[y, x] != 0 && board[dY + y, dX + x] != 0)
+                    {
+                        return false;
+                    }        
+                }
+            }
+            return true;
+        }
+
+
+        private void freeze()
+        {
+            for (int x = 0; x < piece.GetLength(1); x++)
+            {
+                for (int y = 0; y < piece.GetLength(0); y++)
+                {
+                    if (piece[y, x] != 0)
+                    {
+                        board[pY+y, pX+x] = piece[y,x];
+                    }
+                }
+            }
         }
     }
 }

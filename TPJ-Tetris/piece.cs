@@ -23,17 +23,49 @@ namespace TPJ_Tetris
         int selectedPiece;
         public int width { get; private set; }
         public int height { get; private set; }
-
+        byte[,] instance;
         public Piece()
         {
             selectedPiece = (new Random()).Next(models.Length);
-            width  = models[selectedPiece].GetLength(1);
-            height = models[selectedPiece].GetLength(0);
+            instance = models[selectedPiece];
+            width  = instance.GetLength(1);
+            height = instance.GetLength(0);
         }
 
         public byte GetBlock(int y, int x)
         {
-            return models[selectedPiece][y, x];
+            return instance[y, x];
         }
+
+        public void Rotate()
+        {
+            byte[,] rotated = new byte[width, height];
+            for (int x = 0; x < width; x++)
+            {
+                for (int y = 0; y < height; y++)
+                {
+                    rotated[x, height - y - 1] = instance[y, x];
+                }
+            }
+            instance = rotated;
+            width = instance.GetLength(1);
+            height = instance.GetLength(0);
+        }
+
+        public void Unrotate()
+        {
+            byte[,] rotated = new byte[width, height];
+            for (int x = 0; x < width; x++)
+            {
+                for (int y = 0; y < height; y++)
+                {
+                    rotated[x,y] = instance[y,width-1-x];
+                }
+            }
+            instance = rotated;
+            width = instance.GetLength(1);
+            height = instance.GetLength(0);
+        }
+    
     }
 }

@@ -60,17 +60,23 @@ namespace TPJ_Tetris
             lastHumanMove     += (float)gameTime.ElapsedGameTime.TotalSeconds;
             // movimento automatico para baixo
             if (lastAutomaticMove >= 1f)
+            {
                 if (canGoDown())
                 {
                     pY++;
                     lastAutomaticMove = 0;
                 }
                 else newPiece();
+            }
 
             if (lastHumanMove >= 1f / 20f)
             {
-                lastHumanMove = 0f;
-
+                if (Keyboard.GetState().IsKeyDown(Keys.Up))
+                {
+                    piece.Rotate();
+                    if (!canGo(pX, pY))
+                        piece.Unrotate();
+                }
                 if (Keyboard.GetState().IsKeyDown(Keys.Down) && canGoDown())
                     pY++;
                 if (Keyboard.GetState().IsKeyDown(Keys.Left) && canGoLeft())
@@ -87,9 +93,9 @@ namespace TPJ_Tetris
                     while (canGoDown()) pY++;
                     newPiece();
                     spacePressed = true;
-                }            }
-
-
+                }
+                lastHumanMove = 0f;
+            }
             base.Update(gameTime);
         }
         protected override void Draw(GameTime gameTime)
@@ -110,6 +116,7 @@ namespace TPJ_Tetris
                     {
                         if (piece.GetBlock(y - pY, x - pX) != 0)
                         {
+
                             spriteBatch.Draw(box,
                                 new Vector2(x*30, (y-2)*30),
                                 colors[piece.GetBlock(y-pY,x-pX)-1]);
@@ -140,6 +147,10 @@ namespace TPJ_Tetris
         }
         private bool canGo(int dX, int dY)
         {
+            if (dX < 0)                 return false;
+            if (dX + piece.width > 10)  return false;
+            if (dY + piece.height > 22) return false;
+
             // Vamos supor que é possível
             // e procurar um contra exemplo
             for (int x = 0; x < piece.width; x++)

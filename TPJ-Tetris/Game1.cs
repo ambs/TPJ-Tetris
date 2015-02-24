@@ -21,6 +21,7 @@ namespace TPJ_Tetris
         int pX = 4, pY = 0;
         float lastAutomaticMove = 0f;
         float lastHumanMove = 0f;
+        bool spacePressed = false;
 
         public Game1()
             : base()
@@ -31,25 +32,19 @@ namespace TPJ_Tetris
             graphics.PreferredBackBufferWidth = 300;
             Content.RootDirectory = "Content";
         }
-
         protected override void Initialize()
         {
-            // TODO: Add your initialization logic here
-
             base.Initialize();
         }
-
         protected override void LoadContent()
         {
             spriteBatch = new SpriteBatch(GraphicsDevice);
             box = Content.Load<Texture2D>("box");
         }
-
         protected override void UnloadContent()
         {
             box.Dispose();
         }
-
         protected override void Update(GameTime gameTime)
         {
             // para sair do jogo
@@ -60,43 +55,38 @@ namespace TPJ_Tetris
             lastHumanMove     += (float)gameTime.ElapsedGameTime.TotalSeconds;
             // movimento automatico para baixo
             if (lastAutomaticMove >= 1f)
-                if(canGoDown())
+                if (canGoDown())
                 {
                     pY++;
                     lastAutomaticMove = 0;
                 }
-                else
-                {
-                    freeze();
-                    pY = 0;
-                }
+                else newPiece();
 
             if (lastHumanMove >= 1f / 20f)
             {
                 lastHumanMove = 0f;
-                // verificar se seta para baixo foi pressionada
-                if (Keyboard.GetState().IsKeyDown(Keys.Down))
+
+                if (Keyboard.GetState().IsKeyDown(Keys.Down) && canGoDown())
+                    pY++;
+                if (Keyboard.GetState().IsKeyDown(Keys.Left) && canGoLeft())
+                    pX--;
+                if (Keyboard.GetState().IsKeyDown(Keys.Right) && canGoRight())
+                    pX++;
+
+                if (Keyboard.GetState().IsKeyUp(Keys.Space))
+                    spacePressed = false;
+
+                if (spacePressed == false &&
+                    Keyboard.GetState().IsKeyDown(Keys.Space))
                 {
-                    if (canGoDown()) pY++;
-                }
-                if (Keyboard.GetState().IsKeyDown(Keys.Left))
-                {
-                    if (canGoLeft()) pX--;
-                }
-                if (Keyboard.GetState().IsKeyDown(Keys.Right))
-                {
-                    if (canGoRight()) pX++;
-                }
-            }
+                    while (canGoDown()) pY++;
+                    newPiece();
+                    spacePressed = true;
+                }            }
 
 
             base.Update(gameTime);
         }
-
-        /// <summary>
-        /// This is called when the game should draw itself.
-        /// </summary>
-        /// <param name="gameTime">Provides a snapshot of timing values.</param>
         protected override void Draw(GameTime gameTime)
         {
             GraphicsDevice.Clear(Color.CornflowerBlue);
@@ -125,7 +115,6 @@ namespace TPJ_Tetris
 
             base.Draw(gameTime);
         }
-
         private bool canGoDown()
         {
             if (pY + piece.GetLength(0) >= 22)
@@ -133,7 +122,6 @@ namespace TPJ_Tetris
             else
                 return canGo(pX, pY+1);
         }
-
         private bool canGoLeft()
         {
             if (pX == 0) return false;
@@ -144,7 +132,6 @@ namespace TPJ_Tetris
             if (pX + piece.GetLength(1) == 10) return false;
             else return canGo(pX + 1, pY);
         }
-
         private bool canGo(int dX, int dY)
         {
             // Vamos supor que é possível
@@ -161,8 +148,11 @@ namespace TPJ_Tetris
             }
             return true;
         }
-
-
+        private void newPiece()
+        {
+            freeze();
+            pY = 0;
+        }
         private void freeze()
         {
             for (int x = 0; x < piece.GetLength(1); x++)

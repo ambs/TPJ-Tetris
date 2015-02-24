@@ -17,11 +17,11 @@ namespace TPJ_Tetris
         SpriteBatch spriteBatch;
         Texture2D box;
         byte[,] board = new byte[22, 10];
-        byte[,] piece = { { 0, 1, 0 }, { 1, 1, 1 } };
         int pX = 4, pY = 0;
         float lastAutomaticMove = 0f;
         float lastHumanMove = 0f;
         bool spacePressed = false;
+        Piece piece;
 
         public Game1()
             : base()
@@ -34,6 +34,8 @@ namespace TPJ_Tetris
         }
         protected override void Initialize()
         {
+            piece = new Piece();
+
             base.Initialize();
         }
         protected override void LoadContent()
@@ -100,10 +102,10 @@ namespace TPJ_Tetris
                             new Vector2(x * 30, (y-2) * 30),
                             Color.White);
                     if (y >= pY && x >= pX && 
-                        y < pY + piece.GetLength(0) &&
-                        x < pX + piece.GetLength(1))
+                        y < pY + piece.height &&
+                        x < pX + piece.width)
                     {
-                        if (piece[y - pY, x - pX] != 0)
+                        if (piece.GetBlock(y - pY, x - pX) != 0)
                         {
                             spriteBatch.Draw(box,
                                 new Vector2(x*30, (y-2)*30),
@@ -117,11 +119,12 @@ namespace TPJ_Tetris
         }
         private bool canGoDown()
         {
-            if (pY + piece.GetLength(0) >= 22)
+            if (pY + piece.height >= 22)
                 return false;
             else
                 return canGo(pX, pY+1);
         }
+        
         private bool canGoLeft()
         {
             if (pX == 0) return false;
@@ -129,18 +132,18 @@ namespace TPJ_Tetris
         }
         private bool canGoRight()
         {
-            if (pX + piece.GetLength(1) == 10) return false;
+            if (pX + piece.width == 10) return false;
             else return canGo(pX + 1, pY);
         }
         private bool canGo(int dX, int dY)
         {
             // Vamos supor que é possível
             // e procurar um contra exemplo
-            for (int x = 0; x < piece.GetLength(1); x++)
+            for (int x = 0; x < piece.width; x++)
             {
-                for (int y = 0; y < piece.GetLength(0); y++)
+                for (int y = 0; y < piece.height; y++)
                 {
-                    if (piece[y, x] != 0 && board[dY + y, dX + x] != 0)
+                    if (piece.GetBlock(y, x) != 0 && board[dY + y, dX + x] != 0)
                     {
                         return false;
                     }        
@@ -152,16 +155,19 @@ namespace TPJ_Tetris
         {
             freeze();
             pY = 0;
+            piece = new Piece();
+            pX = (10 - piece.width) / 2;
+           
         }
         private void freeze()
         {
-            for (int x = 0; x < piece.GetLength(1); x++)
+            for (int x = 0; x < piece.width; x++)
             {
-                for (int y = 0; y < piece.GetLength(0); y++)
+                for (int y = 0; y < piece.height; y++)
                 {
-                    if (piece[y, x] != 0)
+                    if (piece.GetBlock(y, x) != 0)
                     {
-                        board[pY+y, pX+x] = piece[y,x];
+                        board[pY+y, pX+x] = piece.GetBlock(y,x);
                     }
                 }
             }

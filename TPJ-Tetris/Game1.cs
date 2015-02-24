@@ -22,6 +22,9 @@ namespace TPJ_Tetris
         float lastHumanMove = 0f;
         bool spacePressed = false;
         Piece piece;
+        Color[] colors = { Color.Wheat, Color.YellowGreen, Color.Violet,
+                           Color.Navy, Color.LavenderBlush, Color.IndianRed,
+                           Color.HotPink};
 
         public Game1()
             : base()
@@ -100,7 +103,7 @@ namespace TPJ_Tetris
                     if (board[y , x] != 0)
                         spriteBatch.Draw(box,
                             new Vector2(x * 30, (y-2) * 30),
-                            Color.White);
+                            colors[board[y,x]-1] );
                     if (y >= pY && x >= pX && 
                         y < pY + piece.height &&
                         x < pX + piece.width)
@@ -109,7 +112,7 @@ namespace TPJ_Tetris
                         {
                             spriteBatch.Draw(box,
                                 new Vector2(x*30, (y-2)*30),
-                                Color.White);
+                                colors[piece.GetBlock(y-pY,x-pX)-1]);
                         }
                     }
                 }

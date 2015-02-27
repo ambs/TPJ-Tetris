@@ -13,6 +13,13 @@ namespace TPJ_Tetris
 {
     public class Game1 : Game
     {
+        enum GameStatus
+        {
+            gameplay,
+            freeze,
+            highlight
+        };
+        GameStatus status;
         GraphicsDeviceManager graphics;
         SpriteBatch spriteBatch;
         Texture2D box;
@@ -38,7 +45,7 @@ namespace TPJ_Tetris
         protected override void Initialize()
         {
             piece = new Piece();
-
+            status = GameStatus.gameplay;
             base.Initialize();
         }
         protected override void LoadContent()
@@ -50,7 +57,8 @@ namespace TPJ_Tetris
         {
             box.Dispose();
         }
-        protected override void Update(GameTime gameTime)
+        protected override void 
+            Update(GameTime gameTime)
         {
             // para sair do jogo
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))

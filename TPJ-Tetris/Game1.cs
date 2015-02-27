@@ -31,7 +31,7 @@ namespace TPJ_Tetris
         Piece piece;
         Color[] colors = { Color.Wheat, Color.YellowGreen, Color.Violet,
                            Color.Navy, Color.LavenderBlush, Color.IndianRed,
-                           Color.HotPink};
+                           Color.HotPink, Color.Black};
 
         public Game1()
             : base()
@@ -57,8 +57,7 @@ namespace TPJ_Tetris
         {
             box.Dispose();
         }
-        protected override void 
-            Update(GameTime gameTime)
+        protected override void Update(GameTime gameTime)
         {
             // para sair do jogo
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
@@ -66,46 +65,80 @@ namespace TPJ_Tetris
             // conta tempo que decorreu desde ultimo movimento automatico e manual
             lastAutomaticMove += (float) gameTime.ElapsedGameTime.TotalSeconds;
             lastHumanMove     += (float)gameTime.ElapsedGameTime.TotalSeconds;
-            // movimento automatico para baixo
-            if (lastAutomaticMove >= 1f)
+
+            if (status == GameStatus.gameplay)
             {
-                if (canGoDown())
+                // movimento automatico para baixo
+                if (lastAutomaticMove >= 1f)
                 {
-                    pY++;
-                    lastAutomaticMove = 0;
+                    if (canGoDown())
+                    {
+                        pY++;
+                        lastAutomaticMove = 0;
+                    }
+                    else newPiece();
                 }
-                else newPiece();
+
+                if (lastHumanMove >= 1f / 20f)
+                {
+                    if (Keyboard.GetState().IsKeyDown(Keys.Up))
+                    {
+                        piece.Rotate();
+                        if (!canGo(pX, pY))
+                            piece.Unrotate();
+                    }
+                    if (Keyboard.GetState().IsKeyDown(Keys.Down) && canGoDown())
+                        pY++;
+                    if (Keyboard.GetState().IsKeyDown(Keys.Left) && canGoLeft())
+                        pX--;
+                    if (Keyboard.GetState().IsKeyDown(Keys.Right) && canGoRight())
+                        pX++;
+
+                    if (Keyboard.GetState().IsKeyUp(Keys.Space))
+                        spacePressed = false;
+
+                    if (spacePressed == false &&
+                        Keyboard.GetState().IsKeyDown(Keys.Space))
+                    {
+                        while (canGoDown()) pY++;
+                        newPiece();
+                        spacePressed = true;
+                    }
+                    lastHumanMove = 0f;
+                }
             }
 
-            if (lastHumanMove >= 1f / 20f)
+            if (status == GameStatus.highlight)
             {
-                if (Keyboard.GetState().IsKeyDown(Keys.Up))
+                if (highlightTime >= .2f)
                 {
-                    piece.Rotate();
-                    if (!canGo(pX, pY))
-                        piece.Unrotate();
+                    RemoveLine(completeLine);
+                    DetectCompleteLine();
+                    if (completeLine != 0)
+                    {
+                        HighlightLine(completeLine);
+                        highlightTime = 0f;
+                    }
+                    else
+                    {
+                        piece = new Piece();
+                        pY = 0;
+                        pX = (10 - piece.width) / 2;
+                        status = GameStatus.gameplay;
+                    }
                 }
-                if (Keyboard.GetState().IsKeyDown(Keys.Down) && canGoDown())
-                    pY++;
-                if (Keyboard.GetState().IsKeyDown(Keys.Left) && canGoLeft())
-                    pX--;
-                if (Keyboard.GetState().IsKeyDown(Keys.Right) && canGoRight())
-                    pX++;
-
-                if (Keyboard.GetState().IsKeyUp(Keys.Space))
-                    spacePressed = false;
-
-                if (spacePressed == false &&
-                    Keyboard.GetState().IsKeyDown(Keys.Space))
-                {
-                    while (canGoDown()) pY++;
-                    newPiece();
-                    spacePressed = true;
-                }
-                lastHumanMove = 0f;
+                highlightTime += (float)gameTime.ElapsedGameTime.TotalSeconds;
             }
             base.Update(gameTime);
         }
+
+        private void RemoveLine(int line)
+        {
+            for (int y = line; y >= 1; y--)
+                for (int x = 0; x < 10; x++)
+                    board[y, x] = board[y - 1, x];
+        }
+
         protected override void Draw(GameTime gameTime)
         {
             GraphicsDevice.Clear(Color.CornflowerBlue);
@@ -118,7 +151,8 @@ namespace TPJ_Tetris
                         spriteBatch.Draw(box,
                             new Vector2(x * 30, (y-2) * 30),
                             colors[board[y,x]-1] );
-                    if (y >= pY && x >= pX && 
+                    if (status == GameStatus.gameplay &&
+                        y >= pY && x >= pX && 
                         y < pY + piece.height &&
                         x < pX + piece.width)
                     {
@@ -176,10 +210,27 @@ namespace TPJ_Tetris
         private void newPiece()
         {
             freeze();
-            pY = 0;
-            piece = new Piece();
-            pX = (10 - piece.width) / 2;
-           
+            if (completeLine == 0)
+            {
+                status = GameStatus.gameplay;
+                pY = 0;
+                piece = new Piece();
+                pX = (10 - piece.width) / 2;
+            }
+            else
+            {
+                status = GameStatus.highlight;
+                HighlightLine(completeLine);
+                highlightTime = 0f;
+            }
+        }
+
+        float highlightTime;
+
+        private void HighlightLine(int l)
+        {
+            for (int x = 0; x < 10; x++)
+                board[l, x] = 8; // COR PARA HIGHLIGHT
         }
         private void freeze()
         {
@@ -192,6 +243,24 @@ namespace TPJ_Tetris
                         board[pY+y, pX+x] = piece.GetBlock(y,x);
                     }
                 }
+            }
+            status = GameStatus.freeze;
+            DetectCompleteLine();
+        }
+
+        int completeLine;
+
+        private void DetectCompleteLine()
+        {
+            completeLine = 0;
+            for (int y = 21; y >= 2 && completeLine == 0; y--)
+            {
+                bool complete = true;
+                for (int x = 0; x < 10 && complete; x++)
+                {
+                    if (board[y, x] == 0) complete = false;
+                }
+                if (complete) completeLine = y;
             }
         }
     }

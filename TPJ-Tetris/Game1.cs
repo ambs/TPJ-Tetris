@@ -33,7 +33,10 @@ namespace TPJ_Tetris
         GameStatus status;
         GraphicsDeviceManager graphics;
         SpriteBatch spriteBatch;
+        
         Texture2D box;
+        Texture2D pixel;
+
         SpriteFont font;
 
         byte[,] board = new byte[22, 10];
@@ -65,11 +68,13 @@ namespace TPJ_Tetris
         {
             spriteBatch = new SpriteBatch(GraphicsDevice);
             box = Content.Load<Texture2D>("box");
+            pixel = Content.Load<Texture2D>("pixel");
             font = Content.Load<SpriteFont>("MyFont");
         }
         protected override void UnloadContent()
         {
             box.Dispose();
+            pixel.Dispose();
         }
         protected override void Update(GameTime gameTime)
         {
@@ -288,6 +293,19 @@ namespace TPJ_Tetris
                 }
                 if (complete) completeLine = y;
             }
+        }
+
+        // Desenha um rectângulo (linha, apenas)
+        private void DrawRectangle(Rectangle r, Color c)
+        {
+            // linha horizontal de topo
+            spriteBatch.Draw(pixel, new Rectangle(r.X, r.Y, r.Width, 1),  c);
+            // linha vertical esquerda
+            spriteBatch.Draw(pixel, new Rectangle(r.X, r.Y, 1, r.Height), c);
+            // linha horizontal, fundo
+            spriteBatch.Draw(pixel, new Rectangle(r.X, r.Y+r.Height-1, r.Width, 1), c);
+            // linha vertical, direita
+            spriteBatch.Draw(pixel, new Rectangle(r.X+r.Width-1, r.Y, 1, r.Height), c);
         }
     }
 }

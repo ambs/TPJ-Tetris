@@ -11,7 +11,7 @@ using Microsoft.Xna.Framework.GamerServices;
 
 /*** TODO LIST ****
  * 
- * 1. Sprite 1x1 pixel
+ * 1. Sprite 1x1 pixel [feito]
  * 2. Método DrawRect
  * 2.1. Desenhar rectângulo à volta da área de jogo
  * 3. Calcular e Mostrar Pontuação

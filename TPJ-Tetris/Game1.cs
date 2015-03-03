@@ -9,6 +9,16 @@ using Microsoft.Xna.Framework.Storage;
 using Microsoft.Xna.Framework.GamerServices;
 #endregion
 
+/*** TODO LIST ****
+ * 
+ * 1. Sprite 1x1 pixel
+ * 2. Método DrawRect
+ * 2.1. Desenhar rectângulo à volta da área de jogo
+ * 3. Calcular e Mostrar Pontuação
+ * 4. Preview de Próxima peça
+ * 5. Som
+ */
+
 namespace TPJ_Tetris
 {
     public class Game1 : Game
@@ -17,12 +27,15 @@ namespace TPJ_Tetris
         {
             gameplay,
             freeze,
-            highlight
+            highlight,
+            gameover,
         };
         GameStatus status;
         GraphicsDeviceManager graphics;
         SpriteBatch spriteBatch;
         Texture2D box;
+        SpriteFont font;
+
         byte[,] board = new byte[22, 10];
         int pX = 4, pY = 0;
         float lastAutomaticMove = 0f;
@@ -52,6 +65,7 @@ namespace TPJ_Tetris
         {
             spriteBatch = new SpriteBatch(GraphicsDevice);
             box = Content.Load<Texture2D>("box");
+            font = Content.Load<SpriteFont>("MyFont");
         }
         protected override void UnloadContent()
         {
@@ -124,7 +138,10 @@ namespace TPJ_Tetris
                         piece = new Piece();
                         pY = 0;
                         pX = (10 - piece.width) / 2;
-                        status = GameStatus.gameplay;
+                        if (canGo(pX, pY))
+                            status = GameStatus.gameplay;
+                        else
+                            status = GameStatus.gameover;
                     }
                 }
                 highlightTime += (float)gameTime.ElapsedGameTime.TotalSeconds;
@@ -165,6 +182,11 @@ namespace TPJ_Tetris
                         }
                     }
                 }
+            if (status == GameStatus.gameover)
+            {
+                spriteBatch.DrawString(font, "GameOver!",
+                        new Vector2(10, 250), Color.Red);
+            }
             spriteBatch.End();
 
             base.Draw(gameTime);
@@ -212,10 +234,14 @@ namespace TPJ_Tetris
             freeze();
             if (completeLine == 0)
             {
-                status = GameStatus.gameplay;
                 pY = 0;
-                piece = new Piece();
                 pX = (10 - piece.width) / 2;
+                piece = new Piece();
+
+                if (canGo(pX, pY))
+                    status = GameStatus.gameplay;
+                else
+                    status = GameStatus.gameover;
             }
             else
             {

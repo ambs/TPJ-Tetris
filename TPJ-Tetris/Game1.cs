@@ -7,14 +7,11 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using Microsoft.Xna.Framework.Storage;
 using Microsoft.Xna.Framework.GamerServices;
+using Microsoft.Xna.Framework.Audio;
 #endregion
 
 /*** TODO LIST ****
  * 
- * 1. Sprite 1x1 pixel [feito]
- * 2. Método DrawRect
- * 2.1. Desenhar rectângulo à volta da área de jogo
- * 3. Calcular e Mostrar Pontuação
  * 4. Preview de Próxima peça
  * 5. Som
  */
@@ -33,20 +30,23 @@ namespace TPJ_Tetris
         GameStatus status;
         GraphicsDeviceManager graphics;
         SpriteBatch spriteBatch;
+        SoundEffect slap;
         
         Texture2D box;
         Texture2D pixel;
 
         SpriteFont font;
 
+        int score = 0;
         byte[,] board = new byte[22, 10];
         int pX = 4, pY = 0;
         float lastAutomaticMove = 0f;
         float lastHumanMove = 0f;
         bool spacePressed = false;
-        Piece piece;
-        Color[] colors = { Color.Wheat, Color.YellowGreen, Color.Violet,
-                           Color.Navy, Color.LavenderBlush, Color.IndianRed,
+
+        Piece nextPiece, piece;
+        Color[] colors = { Color.Wheat,   Color.YellowGreen,   Color.Violet,
+                           Color.Navy,    Color.LavenderBlush, Color.IndianRed,
                            Color.HotPink, Color.Black};
 
         public Game1()
@@ -54,13 +54,14 @@ namespace TPJ_Tetris
         {
             graphics = new GraphicsDeviceManager(this);
             graphics.IsFullScreen = false;
-            graphics.PreferredBackBufferHeight = 600;
-            graphics.PreferredBackBufferWidth = 300;
+            graphics.PreferredBackBufferHeight = 650;
+            graphics.PreferredBackBufferWidth = 550;
             Content.RootDirectory = "Content";
         }
         protected override void Initialize()
         {
             piece = new Piece();
+            nextPiece = new Piece();
             status = GameStatus.gameplay;
             base.Initialize();
         }
@@ -70,11 +71,13 @@ namespace TPJ_Tetris
             box = Content.Load<Texture2D>("box");
             pixel = Content.Load<Texture2D>("pixel");
             font = Content.Load<SpriteFont>("MyFont");
+            slap = Content.Load<SoundEffect>("slap");
         }
         protected override void UnloadContent()
         {
             box.Dispose();
             pixel.Dispose();
+            slap.Dispose();
         }
         protected override void Update(GameTime gameTime)
         {
@@ -140,7 +143,8 @@ namespace TPJ_Tetris
                     }
                     else
                     {
-                        piece = new Piece();
+                        piece = nextPiece;
+                        nextPiece = new Piece();
                         pY = 0;
                         pX = (10 - piece.width) / 2;
                         if (canGo(pX, pY))
@@ -156,6 +160,7 @@ namespace TPJ_Tetris
 
         private void RemoveLine(int line)
         {
+            score += 5;
             for (int y = line; y >= 1; y--)
                 for (int x = 0; x < 10; x++)
                     board[y, x] = board[y - 1, x];
@@ -166,12 +171,15 @@ namespace TPJ_Tetris
             GraphicsDevice.Clear(Color.CornflowerBlue);
 
             spriteBatch.Begin();
+            DrawRectangle(new Rectangle(25, 25, 302, 602), Color.DarkBlue);
+            spriteBatch.DrawString(font, score + " pts",
+                                new Vector2(350, 25), Color.Chartreuse);
             for (int x = 0; x < 10; x++)
                 for (int y = 2; y < 22; y++)
                 {
                     if (board[y , x] != 0)
                         spriteBatch.Draw(box,
-                            new Vector2(x * 30, (y-2) * 30),
+                            new Vector2(x * 30 + 25, (y-2) * 30 + 25),
                             colors[board[y,x]-1] );
                     if (status == GameStatus.gameplay &&
                         y >= pY && x >= pX && 
@@ -182,7 +190,7 @@ namespace TPJ_Tetris
                         {
 
                             spriteBatch.Draw(box,
-                                new Vector2(x*30, (y-2)*30),
+                                new Vector2(x*30 + 25, (y-2)*30 + 25),
                                 colors[piece.GetBlock(y-pY,x-pX)-1]);
                         }
                     }
@@ -192,6 +200,7 @@ namespace TPJ_Tetris
                 spriteBatch.DrawString(font, "GameOver!",
                         new Vector2(10, 250), Color.Red);
             }
+            DrawNextPiece();
             spriteBatch.End();
 
             base.Draw(gameTime);
@@ -239,9 +248,10 @@ namespace TPJ_Tetris
             freeze();
             if (completeLine == 0)
             {
+                piece = nextPiece;
+                nextPiece = new Piece();
                 pY = 0;
                 pX = (10 - piece.width) / 2;
-                piece = new Piece();
 
                 if (canGo(pX, pY))
                     status = GameStatus.gameplay;
@@ -265,6 +275,8 @@ namespace TPJ_Tetris
         }
         private void freeze()
         {
+            slap.Play();
+            score++;
             for (int x = 0; x < piece.width; x++)
             {
                 for (int y = 0; y < piece.height; y++)
@@ -306,6 +318,23 @@ namespace TPJ_Tetris
             spriteBatch.Draw(pixel, new Rectangle(r.X, r.Y+r.Height-1, r.Width, 1), c);
             // linha vertical, direita
             spriteBatch.Draw(pixel, new Rectangle(r.X+r.Width-1, r.Y, 1, r.Height), c);
+        }
+
+        private void DrawNextPiece()
+        {
+            int posX = 350;
+            int posY = 150;
+
+            for (int x = 0; x < nextPiece.width; x++)
+                for (int y = 0; y < nextPiece.height; y++)
+                {
+                    byte c = nextPiece.GetBlock(y,x);
+                    if (c != 0)
+                        spriteBatch.Draw(box,
+                            new Vector2(posX + x*30,posY + y*30),
+                            colors[c - 1]);
+                         
+                }
         }
     }
 }
